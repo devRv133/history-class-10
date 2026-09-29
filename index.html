@@ -54,7 +54,7 @@
 
     <!-- Navigasi -->
     <nav class="w-full border-b border-[#1c1c1a] py-5 px-6 md:px-12 flex justify-between items-center sticky top-0 bg-[#fcfbf9]/95 backdrop-blur-md z-40">
-        <a href="#" id="nav-logo" class="serif-title font-bold text-xl mAd:text-2xl tracking-tight inline-block hover:italic transition-all">
+        <a href="#" id="nav-logo" class="serif-title font-bold text-xl md:text-2xl tracking-tight inline-block hover:italic transition-all">
             ARSIP·CLASS X
         </a>
         <div class="flex items-center space-x-4 md:space-x-6 text-xs md:text-sm font-medium uppercase tracking-wider">
@@ -152,10 +152,10 @@
         </div>
     </footer>
 
-    <!-- LOGIKA GOOGLE DRIVE -->
+    <!-- LOGIKA GOOGLE DRIVE & JAVASCRIPT TERBARU -->
     <script>
-        // TEMPELKAN URL HASIL DEPLOY DARI LANGKAH 1 DI BAWAH INI:
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxLJ8b25nD5yI6gMx7NffZsUJDtxYXXRYfrlNMvpDzcyv8PZKUPjsiRKPpcyn136eb2/exec";
+        // URL Google Apps Script yang baru diperbarui
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyRo2wTrB0_jqj86kFVLg1saV2xjEKx7xuCyb0LW67nau_JPbEXXBevce0JiQSrSOYs/exec";
 
         let photosData = [];
         gsap.registerPlugin(ScrollTrigger);
@@ -190,10 +190,19 @@
                 const card = document.createElement('div');
                 card.className = 'no-slop-card bg-white p-4 space-y-4 gallery-card flex flex-col justify-between relative';
                 
+                const thumbUrl = item.thumb || (item.image ? item.image + "=w600" : "https://lh3.googleusercontent.com/d/" + item.id + "=w600");
+                const fullUrl = item.full || item.image || "https://lh3.googleusercontent.com/d/" + item.id;
+
                 card.innerHTML = `
                     <div class="space-y-3">
                         <div class="h-64 bg-neutral-200 overflow-hidden relative border border-[#1c1c1a]">
-                            <img src="${item.image}" alt="Foto Arsip Class X" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700 hover:scale-105" loading="lazy">
+                            <a href="${fullUrl}" target="_blank" title="Klik untuk lihat foto HD">
+                                <img src="${thumbUrl}" 
+                                     alt="Foto Arsip Class X" 
+                                     loading="lazy" 
+                                     decoding="async"
+                                     class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500 hover:scale-105">
+                            </a>
                         </div>
                     </div>
                 `;
