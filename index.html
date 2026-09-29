@@ -103,9 +103,13 @@
                     <h2 class="serif-title text-4xl md:text-5xl font-bold section-title">Arsip Class X</h2>
                     <p class="text-neutral-600 mt-2 text-base">Foto-foto yang tersimpan di Google Drive dan dimuat secara otomatis.</p>
                 </div>
-                <div class="flex items-center space-x-3">
+                <div class="flex flex-wrap items-center gap-3">
                     <button id="refresh-btn" class="text-xs uppercase tracking-widest font-semibold border border-[#1c1c1a] px-4 py-2 hover:bg-neutral-200 transition-colors">
                         🔄 Muat Ulang Galeri
+                    </button>
+                    <!-- TOMBOL HAPUS SEMUA ADMIN -->
+                    <button id="delete-all-btn" class="text-xs uppercase tracking-widest font-semibold bg-red-100 text-red-600 border border-red-300 px-4 py-2 hover:bg-red-600 hover:text-white transition-colors">
+                        🗑️ Hapus Semua (Admin)
                     </button>
                 </div>
             </div>
@@ -264,6 +268,60 @@
                 alert("Terjadi kesalahan: " + error.message);
             }
         }
+
+        // 3.1 FUNGSI HAPUS SEMUA FOTO SEKALIGUS (ADMIN)
+        document.getElementById('delete-all-btn').addEventListener('click', async function() {
+            if (!photosData || photosData.length === 0) {
+                alert("Tidak ada foto untuk dihapus.");
+                return;
+            }
+
+            const password = prompt("Masukkan Password Admin untuk MENGHAPUS SEMUA foto sekaligus:");
+            if (password !== "admin123") {
+                if (password !== null) {
+                    alert("Password salah! Akses ditolak.");
+                }
+                return;
+            }
+
+            if (!confirm("PERINGATAN: Semua foto dalam arsip akan dihapus permanen sekaligus! Lanjutkan?")) {
+                return;
+            }
+
+            const btn = document.getElementById('delete-all-btn');
+            btn.innerText = "Menghapus Semua...";
+            btn.disabled = true;
+
+            try {
+                // Mengirim permintaan hapus satu per satu atau via action batch ke backend
+                let successCount = 0;
+                for (let item of photosData) {
+                    let fileId = item.id;
+                    if (!fileId) {
+                        const fullUrl = item.full || item.image || "";
+                        const match = fullUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || fullUrl.match(/id=([a-zA-Z0-9_-]+)/);
+                        if (match) fileId = match[1];
+                    }
+                    
+                    if (fileId) {
+                        const response = await fetch(GOOGLE_SCRIPT_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({ action: "delete", id: fileId })
+                        });
+                        const resData = await response.json();
+                        if (resData.status === "success") successCount++;
+                    }
+                }
+
+                alert(`Selesai! ${successCount} foto berhasil dihapus dari arsip.`);
+                fetchPhotos();
+            } catch (error) {
+                alert("Terjadi kesalahan saat menghapus massal: " + error.message);
+            } finally {
+                btn.innerText = "🗑️️ Hapus Semua (Admin)";
+                btn.disabled = false;
+            }
+        });
 
         // 4. PROSES UPLOAD FOTO KE GOOGLE DRIVE
         const photoForm = document.getElementById('photo-form');
