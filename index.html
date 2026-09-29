@@ -154,8 +154,8 @@
 
     <!-- LOGIKA GOOGLE DRIVE & JAVASCRIPT TERBARU -->
     <script>
-        // URL Google Apps Script yang baru diperbarui
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyRo2wTrB0_jqj86kFVLg1saV2xjEKx7xuCyb0LW67nau_JPbEXXBevce0JiQSrSOYs/exec";
+        // LINK GOOGLE APPS SCRIPT TERBARU YANG BARU SAJA KAMU BUAT
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2zTI95eCnS0hu6nwusBS5vBnHePaVlPfixRFPMgPQ1_Eo0uHj9KIMjGbci8tisQ5R/exec";
 
         let photosData = [];
         gsap.registerPlugin(ScrollTrigger);
@@ -176,7 +176,7 @@
             }
         }
 
-        // 2. RENDERING GRID FOTO
+        // 2. RENDERING GRID FOTO + TOMBOL HAPUS ADMIN (DENGAN FALLBACK EXTRACTION ID)
         function renderGrid(photos) {
             const grid = document.getElementById('gallery-grid');
             grid.innerHTML = '';
@@ -192,6 +192,13 @@
                 
                 const thumbUrl = item.thumb || (item.image ? item.image + "=w600" : "https://lh3.googleusercontent.com/d/" + item.id + "=w600");
                 const fullUrl = item.full || item.image || "https://lh3.googleusercontent.com/d/" + item.id;
+                
+                // Backup ekstraksi ID jika properti item.id kosong dari server
+                let fileId = item.id;
+                if (!fileId) {
+                    const match = fullUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || fullUrl.match(/id=([a-zA-Z0-9_-]+)/);
+                    if (match) fileId = match[1];
+                }
 
                 card.innerHTML = `
                     <div class="space-y-3">
@@ -205,6 +212,12 @@
                             </a>
                         </div>
                     </div>
+                    <div class="flex justify-between items-center pt-2 border-t border-neutral-200 mt-2">
+                        <span class="text-[10px] font-mono text-neutral-500 uppercase">ARSIP DRIVING</span>
+                        <button onclick="deletePhoto('${fileId}')" class="text-xs bg-red-100 text-red-600 hover:bg-red-600 hover:text-white px-2.5 py-1 transition-colors border border-red-300 font-mono cursor-pointer">
+                            🗑️ Hapus (Admin)
+                        </button>
+                    </div>
                 `;
                 grid.appendChild(card);
             });
@@ -212,7 +225,47 @@
             initGalleryAnimations();
         }
 
-        // 3. PROSES UPLOAD FOTO KE GOOGLE DRIVE
+        // 3. FUNGSI HAPUS KHUSUS ADMIN
+        async function deletePhoto(fileId) {
+            if (!fileId || fileId === "undefined") {
+                alert("ID File tidak valid atau tidak ditemukan.");
+                return;
+            }
+
+            const password = prompt("Masukkan Password Admin untuk menghapus foto ini:");
+            
+            // Password admin diatur di sini ("admin123")
+            if (password !== "admin123") { 
+                if (password !== null) {
+                    alert("Password salah! Anda tidak memiliki akses admin.");
+                }
+                return;
+            }
+
+            if (!confirm("Apakah Anda yakin ingin menghapus foto arsip ini secara permanen?")) {
+                return;
+            }
+
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: "delete", id: fileId })
+                });
+
+                const resData = await response.json();
+
+                if (resData.status === "success") {
+                    alert("Foto berhasil dihapus!");
+                    fetchPhotos(); // Muat ulang galeri
+                } else {
+                    throw new Error(resData.message || "Gagal menghapus foto.");
+                }
+            } catch (error) {
+                alert("Terjadi kesalahan: " + error.message);
+            }
+        }
+
+        // 4. PROSES UPLOAD FOTO KE GOOGLE DRIVE
         const photoForm = document.getElementById('photo-form');
         photoForm.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -262,7 +315,7 @@
             reader.readAsDataURL(file);
         });
 
-        // 4. CANVASES & GSAP ANIMATIONS
+        // 5. CANVASES & GSAP ANIMATIONS
         function initHeroCanvas() {
             const canvas = document.getElementById('hero-canvas');
             if (!canvas) return;
