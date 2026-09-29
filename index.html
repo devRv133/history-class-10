@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arsip Sejarah Sekolah (Cloudinary + Firebase)</title>
+    <title>Arsip Sejarah Sekolah (Class X)</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,10 +16,6 @@
     <!-- GSAP CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-
-    <!-- Firebase App & Database (SDK v9 Compatibility) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <style>
         body {
@@ -110,7 +106,7 @@
             <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-4">
                 <div>
                     <h2 class="serif-title text-4xl md:text-5xl font-bold section-title">Arsip Class X</h2>
-                    <p class="text-neutral-600 mt-2 text-base">Foto-foto yang diunggah secara publik dan tersinkronisasi secara langsung di semua perangkat.</p>
+                    <p class="text-neutral-600 mt-2 text-base">Foto-foto yang diunggah secara publik dan tersimpan terbuka di semua HP.</p>
                 </div>
                 <div class="flex items-center space-x-3">
                     <span id="admin-status-badge" class="hidden text-xs bg-red-600 text-white font-mono font-bold px-3 py-1.5 border border-[#1c1c1a]">
@@ -124,7 +120,7 @@
 
             <!-- Grid Galeri -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="gallery-grid">
-                <!-- Foto-foto tersimpan akan dimuat secara otomatis dari Firebase -->
+                <!-- Tempat foto akan dimuat -->
             </div>
         </div>
     </section>
@@ -158,65 +154,45 @@
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
             <div>
                 <p class="serif-title text-lg font-bold">ARSIP SEKOLAH INDONESIA</p>
-                <p class="text-neutral-400 mt-1">Terhubung langsung dengan Cloudinary CDN & Firebase Realtime Database.</p>
+                <p class="text-neutral-400 mt-1">Terhubung langsung dengan Cloudinary CDN Storage.</p>
             </div>
             <p class="text-neutral-500">© 1950 – 2026. Editorial Brutalisme.</p>
         </div>
     </footer>
 
-    <!-- LOGIKA SYSTEM (CLOUDINARY + FIREBASE REALTIME DATABASE) -->
+    <!-- LOGIKA UTAMA (API OTOMATIS) -->
     <script>
-        // ============================================================
-        // ⚙️ KONFIGURASI CLOUDINARY
-        // ============================================================
         const CLOUDINARY_CLOUD_NAME = "yk7gjoum";
         const CLOUDINARY_UPLOAD_PRESET = "arsip_sekolah_preset";
-
-        // ============================================================
-        // 🔥 KONFIGURASI FIREBASE REALTIME DATABASE
-        // ============================================================
-        const firebaseConfig = {
-            databaseURL: "https://arsip-classx-default-rtdb.asia-southeast1.firebasedatabase.app"
-        };
         
-        // Inisialisasi Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const photosRef = db.ref("photos");
+        // Database Publik Bebas Akses (npoint.io Bin ID)
+        const DATABASE_URL = "https://api.npoint.io/4678df88cd5c3bcf1489";
 
-        // Mode Admin PIN
         const ADMIN_PIN = "1234"; 
         let isAdminLoggedIn = false;
         let photosData = [];
 
         gsap.registerPlugin(ScrollTrigger);
 
-        // 1. MEMUAT DATA SECARA REALTIME DARI FIREBASE (Otomatis Sync ke Semua HP)
-        function listenToPhotos() {
+        // 1. MEMUAT DATA FOTO
+        async function fetchPhotos() {
             const grid = document.getElementById('gallery-grid');
-            grid.innerHTML = `<div class="col-span-full text-center py-12 text-neutral-500 font-mono">Menghubungkan ke Realtime Cloud Database...</div>`;
+            grid.innerHTML = `<div class="col-span-full text-center py-12 text-neutral-500 font-mono">Memuat foto dari Cloud Server...</div>`;
 
-            photosRef.on("value", (snapshot) => {
-                const data = snapshot.val();
-                photosData = [];
+            try {
+                const response = await fetch(DATABASE_URL);
+                if (!response.ok) throw new Error("Gagal mengambil data server");
                 
-                if (data) {
-                    Object.keys(data).forEach(key => {
-                        photosData.unshift({
-                            firebaseKey: key,
-                            ...data[key]
-                        });
-                    });
-                }
-                
+                const data = await response.json();
+                photosData = Array.isArray(data) ? data : [];
                 renderGrid(photosData);
-            }, (error) => {
-                console.error("Firebase Sync Error:", error);
-                grid.innerHTML = `<div class="col-span-full text-center py-12 text-red-600 font-mono">Gagal memuat foto. Periksa koneksi internet Anda.</div>`;
-            });
+            } catch (err) {
+                console.warn("Gagal memuat dari API, mencoba fallback:", err);
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-neutral-500 font-mono">Belum ada foto yang tersedia. Silakan upload foto pertama!</div>`;
+            }
         }
 
-        // 2. RENDER FOTO KE GALERI
+        // 2. TAMPILKAN KE GRID
         function renderGrid(photos) {
             const grid = document.getElementById('gallery-grid');
             grid.innerHTML = '';
@@ -226,12 +202,12 @@
                 return;
             }
 
-            photos.forEach((item) => {
+            photos.forEach((item, index) => {
                 const card = document.createElement('div');
                 card.className = 'no-slop-card bg-white p-4 space-y-4 gallery-card flex flex-col justify-between relative';
                 
                 const deleteBtnHtml = isAdminLoggedIn ? `
-                    <button onclick="deletePhoto('${item.firebaseKey}')" class="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 uppercase tracking-wider border border-[#1c1c1a] transition-colors mt-2 flex items-center justify-center space-x-1">
+                    <button onclick="deletePhoto(${index})" class="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 uppercase tracking-wider border border-[#1c1c1a] transition-colors mt-2 flex items-center justify-center space-x-1">
                         <span>🗑️ Hapus Foto</span>
                     </button>
                 ` : '';
@@ -250,21 +226,32 @@
             initGalleryAnimations();
         }
 
-        // 3. FITUR HAPUS FOTO (KHUSUS MODE ADMIN)
-        function deletePhoto(key) {
-            if (!isAdminLoggedIn) {
-                alert("Akses ditolak! Hanya Admin yang berhak menghapus foto.");
-                return;
-            }
-
-            if (confirm("Apakah Anda yakin ingin menghapus foto ini dari seluruh perangkat?")) {
-                photosRef.child(key).remove()
-                    .then(() => alert("Foto berhasil dihapus secara global!"))
-                    .catch((err) => alert("Gagal menghapus foto: " + err.message));
+        // 3. SIMPAN KE DATABASE ONLINE
+        async function saveToDatabase(updatedList) {
+            try {
+                await fetch(DATABASE_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedList)
+                });
+            } catch (err) {
+                console.error("Gagal memperbarui database online:", err);
             }
         }
 
-        // 4. ADMIN TOGGLE
+        // 4. FITUR HAPUS FOTO
+        async function deletePhoto(index) {
+            if (!isAdminLoggedIn) return alert("Hanya Admin yang berhak menghapus!");
+
+            if (confirm("Apakah Anda yakin ingin menghapus foto ini secara publik?")) {
+                photosData.splice(index, 1);
+                renderGrid(photosData);
+                await saveToDatabase(photosData);
+                alert("Foto berhasil dihapus!");
+            }
+        }
+
+        // 5. TOGGLE ADMIN
         const adminToggleBtn = document.getElementById('admin-toggle-btn');
         const adminStatusBadge = document.getElementById('admin-status-badge');
 
@@ -286,14 +273,14 @@
                     adminToggleBtn.classList.add('bg-red-600', 'text-white');
                     adminStatusBadge.classList.remove('hidden');
                     renderGrid(photosData);
-                    alert("Mode Admin Aktif! Anda bisa menghapus foto sekarang.");
+                    alert("Mode Admin Aktif!");
                 } else if (inputPin !== null) {
                     alert("PIN Salah!");
                 }
             }
         });
 
-        // 5. UNGGAN FOTO KE CLOUDINARY DAN SIMPAN TERMAL KE FIREBASE
+        // 6. UPLOAD FOTO
         const photoForm = document.getElementById('photo-form');
         photoForm.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -303,17 +290,14 @@
             const btnSpinner = document.getElementById('btn-spinner');
             const fileInput = document.getElementById('input-file');
 
-            if (!fileInput.files[0]) {
-                alert("Pilih foto terlebih dahulu!");
-                return;
-            }
+            if (!fileInput.files[0]) return alert("Pilih foto terlebih dahulu!");
 
             submitBtn.disabled = true;
-            btnText.innerText = "Mengunggah Gambar...";
+            btnText.innerText = "Mengunggah Foto...";
             btnSpinner.classList.remove('hidden');
 
             try {
-                // A. Upload Gambar Fisik ke Cloudinary
+                // Upload Gambar ke Cloudinary
                 const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
                 formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
@@ -324,25 +308,22 @@
                 });
 
                 const resData = await response.json();
+                if (!response.ok) throw new Error(resData.error?.message || "Gagal upload gambar.");
 
-                if (!response.ok) {
-                    throw new Error(resData.error?.message || "Gagal mengunggah gambar ke Cloudinary.");
-                }
+                // Masukkan ke array dan update Database Online
+                const newPhoto = { id: resData.public_id, image: resData.secure_url };
+                photosData.unshift(newPhoto);
 
-                // B. Simpan URL Gambar ke Firebase Database (Semua HP langsung bisa baca)
-                const newPhotoRef = photosRef.push();
-                await newPhotoRef.set({
-                    image: resData.secure_url,
-                    createdAt: firebase.database.ServerValue.TIMESTAMP
-                });
+                await saveToDatabase(photosData);
 
-                alert("Berhasil! Foto berhasil diunggah dan langsung dapat dilihat oleh HP lain.");
+                alert("Berhasil! Foto terunggah dan dapat dilihat oleh semua HP lain.");
                 
                 photoForm.reset();
+                renderGrid(photosData);
                 document.getElementById('galeri').scrollIntoView({ behavior: 'smooth' });
 
             } catch (error) {
-                alert("Terjadi kesalahan: " + error.message);
+                alert("Gagal mengunggah foto: " + error.message);
             } finally {
                 submitBtn.disabled = false;
                 btnText.innerText = "Unggah Foto Ke Cloud Online";
@@ -350,7 +331,7 @@
             }
         });
 
-        // 6. ANIMASI CANVAS INTERAKTIF
+        // 7. ANIMASI CANVAS
         function initHeroCanvas() {
             const canvas = document.getElementById('hero-canvas');
             if (!canvas) return;
@@ -451,7 +432,7 @@
             draw();
         }
 
-        // 7. GSAP ANIMATIONS
+        // 8. GSAP ANIMATIONS
         function initAnimations() {
             const tlLoader = gsap.timeline();
             tlLoader.to("#loader-bar", { width: "100%", duration: 0.8, ease: "power2.inOut" })
@@ -486,12 +467,12 @@
             });
         }
 
-        document.getElementById('refresh-btn').addEventListener('click', () => listenToPhotos());
+        document.getElementById('refresh-btn').addEventListener('click', fetchPhotos);
 
         document.addEventListener('DOMContentLoaded', () => {
             initAnimations();
             initHeroCanvas();
-            listenToPhotos(); // Jalankan Realtime Sync Firebase
+            fetchPhotos();
         });
     </script>
 </body> 
