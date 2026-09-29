@@ -210,9 +210,9 @@
         // ============================================================
         // ⚙️ KONFIGURASI CLOUDINARY (Ganti dengan Akun Anda)
         // ============================================================
-        const CLOUDINARY_CLOUD_NAME = "yk79joum"; // Contoh: "dxy123abc"
+        const CLOUDINARY_CLOUD_NAME = "yk7gjoum"; // Contoh: "dxy123abc"
         const CLOUDINARY_UPLOAD_PRESET = "arsip_sekolah_preset"; // Contoh: "arsip_sekolah_preset"
-        const CLOUDINARY_TAG = "arsip_sekolah_public";
+        const CLOUDINARY_TAG = "arsip_sekolah_preset";
 
         gsap.registerPlugin(ScrollTrigger);
 
@@ -310,7 +310,7 @@
         photoForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            if (CLOUDINARY_CLOUD_NAME === "ISI_DENGAN_CLOUD_NAME_ANDA") {
+            if (CLOUDINARY_CLOUD_NAME === "yk7gjoum") {
                 alert("Harap isi CLOUDINARY_CLOUD_NAME dan CLOUDINARY_UPLOAD_PRESET di dalam script kodenya terlebih dahulu!");
                 return;
             }
