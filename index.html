@@ -208,11 +208,11 @@
     <!-- LOGIKA INTEGRASI CLOUDINARY & GSAP -->
     <script>
         // ============================================================
-        // ⚙️ KONFIGURASI CLOUDINARY (Ganti dengan Akun Anda)
+        // ⚙️ KONFIGURASI CLOUDINARY
         // ============================================================
-        const CLOUDINARY_CLOUD_NAME = "yk7gjoum"; // Contoh: "dxy123abc"
-        const CLOUDINARY_UPLOAD_PRESET = "arsip_sekolah_preset"; // Contoh: "arsip_sekolah_preset"
-        const CLOUDINARY_TAG = "arsip_sekolah_preset";
+        const CLOUDINARY_CLOUD_NAME = "yk7gjoum";
+        const CLOUDINARY_UPLOAD_PRESET = "arsip_sekolah_preset";
+        const CLOUDINARY_TAG = "arsip_sekolah_public";
 
         gsap.registerPlugin(ScrollTrigger);
 
@@ -232,23 +232,27 @@
             }
         ];
 
+        function cleanContextValue(str) {
+            return String(str || '').replace(/[|=]/g, ' ').trim();
+        }
+
         // 1. FUNGSI UNTUK MEMANGGIL/MENGAMBIL FOTO DARI CLOUDINARY
         async function fetchCloudinaryPhotos() {
             const grid = document.getElementById('gallery-grid');
             grid.innerHTML = `<div class="col-span-full text-center py-12 text-neutral-500 font-mono">Mengambil data foto dari Cloudinary CDN...</div>`;
 
             try {
-                // Fetch list foto berdasarkan TAG di Cloudinary
-                const response = await fetch(`https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/list/${CLOUDINARY_TAG}.json`);
+                const response = await fetch(`https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/list/${CLOUDINARY_TAG}.json?t=${Date.now()}`);
                 
                 if (!response.ok) {
-                    throw new Error("Gagal mengambil data dari Cloudinary. Pastikan Resource List sudah diaktifkan di Settings Cloudinary.");
+                    throw new Error("Gagal mengambil data dari Resource List Cloudinary.");
                 }
 
                 const data = await response.json();
                 
                 if (!data.resources || data.resources.length === 0) {
-                    renderGrid(fallbackPhotos);
+                    const localPhotos = JSON.parse(localStorage.getItem('cloud_photos_cache') || '[]');
+                    renderGrid(localPhotos.length > 0 ? localPhotos : fallbackPhotos);
                     return;
                 }
 
@@ -267,7 +271,6 @@
 
             } catch (error) {
                 console.warn("Cloudinary Fetch Fallback:", error.message);
-                // Jika Resource List belum diaktifkan/error, gunakan LocalStorage + Fallback
                 const localPhotos = JSON.parse(localStorage.getItem('cloud_photos_cache') || '[]');
                 renderGrid(localPhotos.length > 0 ? localPhotos : fallbackPhotos);
             }
@@ -300,7 +303,7 @@
         }
 
         function escapeHTML(str) {
-            return String(str).replace(/[&<>'"]/g, 
+            return String(str || '').replace(/[&<>'"]/g, 
                 tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
             );
         }
@@ -309,11 +312,6 @@
         const photoForm = document.getElementById('photo-form');
         photoForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-
-            if (CLOUDINARY_CLOUD_NAME === "yk7gjoum") {
-                alert("Harap isi CLOUDINARY_CLOUD_NAME dan CLOUDINARY_UPLOAD_PRESET di dalam script kodenya terlebih dahulu!");
-                return;
-            }
 
             const submitBtn = document.getElementById('submit-btn');
             const btnText = document.getElementById('btn-text');
@@ -335,14 +333,16 @@
             btnSpinner.classList.remove('hidden');
 
             try {
-                // Buat FormData untuk dikirim ke API Cloudinary
                 const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
                 formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
                 formData.append('tags', CLOUDINARY_TAG);
                 
-                // Menyimpan Metadata (Nama, Tahun, Caption) ke dalam Context Cloudinary
-                const contextString = `author=${author}|year=${year}|caption=${caption}`;
+                const safeAuthor = cleanContextValue(author);
+                const safeYear = cleanContextValue(year);
+                const safeCaption = cleanContextValue(caption);
+                
+                const contextString = `author=${safeAuthor}|year=${safeYear}|caption=${safeCaption}`;
                 formData.append('context', contextString);
 
                 // Kirim langsung ke Cloudinary API
@@ -351,18 +351,19 @@
                     body: formData
                 });
 
+                const resData = await response.json();
+
                 if (!response.ok) {
-                    throw new Error("Gagal mengunggah foto. Periksa Upload Preset Cloudinary Anda.");
+                    const serverMsg = resData.error?.message || "Periksa Upload Preset Cloudinary Anda.";
+                    throw new Error(serverMsg);
                 }
 
-                const uploadedData = await response.json();
-                
                 // Simpan juga ke cache lokal agar langsung terlihat tanpa menunggu propagasi CDN
                 const newPhoto = {
                     author: author,
                     year: year,
                     caption: caption,
-                    image: uploadedData.secure_url
+                    image: resData.secure_url
                 };
 
                 const localCache = JSON.parse(localStorage.getItem('cloud_photos_cache') || '[]');
