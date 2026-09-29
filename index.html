@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arsip & Garis Waktu Sejarah Sekolah (Cloudinary Powered)</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+    
+    <!-- GSAP & ScrollTrigger CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fcfbf9;
+            color: #1c1c1a;
+        }
+        .serif-title {
+            font-family: 'Playfair Display', serif;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #fcfbf9; }
+        ::-webkit-scrollbar-thumb { background: #1c1c1a; }
+        
+        .no-slop-card {
+            border: 1px solid #1c1c1a;
+            border-radius: 0px;
+            box-shadow: 4px 4px 0px #1c1c1a;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .no-slop-card:hover {
+            transform: translate(-3px, -3px);
+            box-shadow: 7px 7px 0px #1c1c1a;
+        }
+        .timeline-line-progress {
+            transform-origin: top center;
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+
+    <!-- Preloader Tirai -->
+    <div id="preloader" class="fixed inset-0 bg-[#1c1c1a] z-50 flex flex-col items-center justify-center text-[#fcfbf9]">
+        <h1 class="serif-title text-3xl md:text-4xl italic opacity-0" id="loader-text">Membuka Lembaran Waktu...</h1>
+        <div class="w-32 h-[1px] bg-neutral-600 mt-6 relative overflow-hidden">
+            <div id="loader-bar" class="absolute inset-y-0 left-0 bg-[#fcfbf9] w-0"></div>
+        </div>
+    </div>
+
+    <!-- Navigasi -->
+    <nav class="w-full border-b border-[#1c1c1a] py-5 px-6 md:px-12 flex justify-between items-center sticky top-0 bg-[#fcfbf9]/95 backdrop-blur-md z-40">
+        <a href="#" id="nav-logo" class="serif-title font-bold text-xl md:text-2xl tracking-tight inline-block hover:italic transition-all">
+            ARSIP·SEKOLAH
+        </a>
+        <div class="space-x-6 md:space-x-8 text-xs md:text-sm font-medium uppercase tracking-wider">
+            <a href="#timeline" class="hover:underline underline-offset-4">Garis Waktu</a>
+            <a href="#galeri" class="hover:underline underline-offset-4">Arsip Publik</a>
+            <a href="#upload-section" class="bg-[#1c1c1a] text-[#fcfbf9] px-4 py-2 hover:bg-neutral-800 transition-colors border border-[#1c1c1a]">Donasi Foto</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="min-h-[85vh] border-b border-[#1c1c1a] px-6 md:px-12 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div class="lg:col-span-7 space-y-6">
+            <span id="hero-badge" class="inline-block text-xs uppercase tracking-widest font-semibold border border-[#1c1c1a] px-3 py-1 bg-white">
+                Arsip Digital Resmi Komunitas
+            </span>
+            <h1 class="serif-title text-5xl md:text-7xl font-bold leading-[1.08] tracking-tight" id="hero-title">
+                Menolak Lupa, <br><span class="italic font-normal text-neutral-600">Merawat Tradisi.</span>
+            </h1>
+            <p class="text-neutral-700 max-w-xl text-base md:text-lg leading-relaxed font-normal" id="hero-desc">
+                Mengeksplorasi kembali setiap sudut koridor, tawa di kelas, dan dedikasi kolektif sejak tahun 1950. Tersimpan aman di Cloud Storage untuk seluruh alumni.
+            </p>
+            <div class="pt-4 flex items-center space-x-4" id="hero-cta">
+                <a href="#timeline" class="bg-[#1c1c1a] text-[#fcfbf9] px-6 py-3 font-semibold text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors border border-[#1c1c1a]">
+                    Jelajahi Sejarah
+                </a>
+                <a href="#upload-section" class="border border-[#1c1c1a] px-6 py-3 font-semibold text-xs tracking-widest uppercase hover:bg-neutral-200 transition-colors">
+                    Unggah Arsip
+                </a>
+            </div>
+        </div>
+
+        <div class="lg:col-span-5 h-[420px] md:h-[500px] bg-neutral-200 relative overflow-hidden border border-[#1c1c1a]" id="hero-img-container">
+            <img src="https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=1000&auto=format&fit=crop" 
+                 alt="Foto Gedung Sekolah" 
+                 class="w-full h-full object-cover grayscale contrast-125 scale-110" 
+                 id="hero-img">
+            <div class="absolute bottom-0 left-0 right-0 bg-[#1c1c1a] text-[#fcfbf9] text-[10px] tracking-widest uppercase py-2 px-3 flex justify-between border-t border-[#1c1c1a]">
+                <span>Gedung Utama (Sektor Barat)</span>
+                <span>Dok. 1962</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Timeline Section -->
+    <section id="timeline" class="py-24 border-b border-[#1c1c1a] px-6 md:px-12 bg-[#1c1c1a] text-[#fcfbf9]">
+        <div class="max-w-4xl mx-auto mb-20">
+            <h2 class="serif-title text-4xl md:text-5xl font-bold section-title">Garis Waktu Epik</h2>
+            <p class="text-neutral-400 mt-3 text-base">Menelusuri jejak langkah, perkembangan fisik, dan momen bersejarah dari masa ke masa.</p>
+        </div>
+
+        <div class="max-w-4xl mx-auto relative border-l border-neutral-800 space-y-16 pl-8 md:pl-12 py-4">
+            <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-amber-500 timeline-line-progress scale-y-0 origin-top"></div>
+
+            <div class="timeline-item relative group">
+                <div class="absolute -left-[41px] md:-left-[57px] top-1.5 w-4 h-4 bg-[#fcfbf9] border-4 border-[#1c1c1a] group-hover:bg-amber-500 transition-colors"></div>
+                <span class="serif-title text-2xl md:text-3xl font-bold text-neutral-400 block mb-2 group-hover:text-amber-500 transition-colors">1950</span>
+                <h3 class="text-xl font-bold mb-2">Pondasi Pertama & Kelas Bambu</h3>
+                <p class="text-neutral-400 max-w-2xl leading-relaxed text-sm md:text-base">
+                    Sekolah didirikan dengan 3 ruang kelas darurat beratap rumbia oleh veteran guru. Mengakomodasi 42 murid pertama.
+                </p>
+            </div>
+
+            <div class="timeline-item relative group">
+                <div class="absolute -left-[41px] md:-left-[57px] top-1.5 w-4 h-4 bg-[#fcfbf9] border-4 border-[#1c1c1a] group-hover:bg-amber-500 transition-colors"></div>
+                <span class="serif-title text-2xl md:text-3xl font-bold text-neutral-400 block mb-2 group-hover:text-amber-500 transition-colors">1985</span>
+                <h3 class="text-xl font-bold mb-2">Laboratorium Komputer Pertama</h3>
+                <p class="text-neutral-400 max-w-2xl leading-relaxed text-sm md:text-base">
+                    Pengadaan komputer tabung berdisket besar untuk mendukung kurikulum informatika awal.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Galeri Publik -->
+    <section id="galeri" class="py-24 border-b border-[#1c1c1a] px-6 md:px-12">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-4">
+                <div>
+                    <h2 class="serif-title text-4xl md:text-5xl font-bold section-title">Arsip Memori Kolektif</h2>
+                    <p class="text-neutral-600 mt-2 text-base">Foto-foto yang diunggah secara publik oleh alumni melalui Cloudinary Cloud Storage.</p>
+                </div>
+                <button id="refresh-btn" class="text-xs uppercase tracking-widest font-semibold border border-[#1c1c1a] px-4 py-2 hover:bg-neutral-200 transition-colors">
+                    🔄 Muat Ulang Galeri
+                </button>
+            </div>
+
+            <!-- Grid Galeri -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="gallery-grid">
+                <!-- Foto-foto dari Cloudinary akan di-render di sini -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Form Upload Foto Cloudinary -->
+    <section id="upload-section" class="py-20 px-6 md:px-12 bg-neutral-100 max-w-4xl mx-auto my-16 border border-[#1c1c1a] no-slop-card">
+        <div class="text-center space-y-3 mb-10">
+            <div class="inline-block text-2xl mb-1" id="floating-icon">☁️</div>
+            <h2 class="serif-title text-3xl md:text-4xl font-bold">Donasikan Foto ke Cloud Storage</h2>
+            <p class="text-neutral-600 max-w-lg mx-auto text-sm leading-relaxed">
+                Foto yang Anda unggah akan dikirim ke Cloudinary secara langsung sehingga dapat diakses oleh siapapun yang membuka website ini.
+            </p>
+        </div>
+
+        <form id="photo-form" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider mb-2">Nama Pengirim / Alumni</label>
+                    <input type="text" id="input-author" required placeholder="Contoh: Budi Santoso (Alumni '92)" 
+                           class="w-full bg-white border border-[#1c1c1a] p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1c1c1a] transition-all form-input">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider mb-2">Tahun Foto</label>
+                    <input type="number" id="input-year" required min="1920" max="2026" placeholder="Contoh: 1991" 
+                           class="w-full bg-white border border-[#1c1c1a] p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1c1c1a] transition-all form-input">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-2">Pilih File Foto Dari Perangkat</label>
+                <input type="file" id="input-file" accept="image/*" required
+                       class="w-full bg-white border border-[#1c1c1a] p-2 text-sm file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-semibold file:bg-[#1c1c1a] file:text-[#fcfbf9] hover:file:bg-neutral-800 cursor-pointer form-input">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-2">Keterangan / Momen Foto</label>
+                <textarea id="input-caption" required rows="3" placeholder="Ceritakan kisah singkat atau momen saat foto ini diambil..." 
+                          class="w-full bg-white border border-[#1c1c1a] p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1c1c1a] transition-all form-input"></textarea>
+            </div>
+
+            <button type="submit" id="submit-btn" class="w-full bg-[#1c1c1a] text-[#fcfbf9] py-4 font-bold uppercase tracking-widest text-xs hover:bg-neutral-800 transition-all border border-[#1c1c1a] flex items-center justify-center space-x-2">
+                <span id="btn-text">Unggah Foto Ke Cloud Online</span>
+                <span id="btn-spinner" class="hidden animate-spin">⏳</span>
+            </button>
+        </form>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-[#1c1c1a] py-12 px-6 md:px-12 bg-[#1c1c1a] text-[#fcfbf9] text-xs">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            <div>
+                <p class="serif-title text-lg font-bold">ARSIP SEKOLAH INDONESIA</p>
+                <p class="text-neutral-400 mt-1">Terhubung langsung dengan Cloudinary CDN Storage.</p>
+            </div>
+            <p class="text-neutral-500">© 1950 – 2026. Bebas AI-Slop. Editorial Brutalisme.</p>
+        </div>
+    </footer>
+
+    <!-- LOGIKA INTEGRASI CLOUDINARY & GSAP -->
+    <script>
+        // ============================================================
+        // ⚙️ KONFIGURASI CLOUDINARY (Ganti dengan Akun Anda)
+        // ============================================================
+        const CLOUDINARY_CLOUD_NAME = "ISI_DENGAN_CLOUD_NAME_ANDA"; // Contoh: "dxy123abc"
+        const CLOUDINARY_UPLOAD_PRESET = "ISI_DENGAN_PRESET_UNSIGNED_ANDA"; // Contoh: "arsip_sekolah_preset"
+        const CLOUDINARY_TAG = "arsip_sekolah_public";
+
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Backup Default Photos jika cloud masih kosong
+        const fallbackPhotos = [
+            {
+                author: "Budi (Alumni '92)",
+                year: "1991",
+                caption: "Suasana gerbang utama sekolah sehabis hujan deras jam pulang sekolah.",
+                image: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?q=80&w=800&auto=format&fit=crop"
+            },
+            {
+                author: "Siti Rahma (Alumni '85)",
+                year: "1984",
+                caption: "Latihan rutin regu pramuka di lapangan belakang sebelum lomba tingkat kota.",
+                image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=800&auto=format&fit=crop"
+            }
+        ];
+
+        // 1. FUNGSI UNTUK MEMANGGIL/MENGAMBIL FOTO DARI CLOUDINARY
+        async function fetchCloudinaryPhotos() {
+            const grid = document.getElementById('gallery-grid');
+            grid.innerHTML = `<div class="col-span-full text-center py-12 text-neutral-500 font-mono">Mengambil data foto dari Cloudinary CDN...</div>`;
+
+            try {
+                // Fetch list foto berdasarkan TAG di Cloudinary
+                const response = await fetch(`https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/list/${CLOUDINARY_TAG}.json`);
+                
+                if (!response.ok) {
+                    throw new Error("Gagal mengambil data dari Cloudinary. Pastikan Resource List sudah diaktifkan di Settings Cloudinary.");
+                }
+
+                const data = await response.json();
+                
+                if (!data.resources || data.resources.length === 0) {
+                    renderGrid(fallbackPhotos);
+                    return;
+                }
+
+                // Format data dari Cloudinary Context
+                const photos = data.resources.map(item => {
+                    const ctx = item.context?.custom || {};
+                    return {
+                        author: ctx.author || "Alumni Anonim",
+                        year: ctx.year || "Arsip",
+                        caption: ctx.caption || "Foto kenangan sekolah.",
+                        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/q_auto,f_auto/v${item.version}/${item.public_id}.${item.format}`
+                    };
+                });
+
+                renderGrid(photos);
+
+            } catch (error) {
+                console.warn("Cloudinary Fetch Fallback:", error.message);
+                // Jika Resource List belum diaktifkan/error, gunakan LocalStorage + Fallback
+                const localPhotos = JSON.parse(localStorage.getItem('cloud_photos_cache') || '[]');
+                renderGrid(localPhotos.length > 0 ? localPhotos : fallbackPhotos);
+            }
+        }
+
+        // 2. RENDER FOTO KE GRID HTML
+        function renderGrid(photos) {
+            const grid = document.getElementById('gallery-grid');
+            grid.innerHTML = '';
+
+            photos.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'no-slop-card bg-white p-4 space-y-4 gallery-card flex flex-col justify-between';
+                card.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="h-64 bg-neutral-200 overflow-hidden relative border border-[#1c1c1a]">
+                            <img src="${item.image}" alt="${escapeHTML(item.caption)}" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700 hover:scale-105" loading="lazy">
+                        </div>
+                        <div class="flex justify-between items-center text-xs text-neutral-600 border-b border-neutral-300 pb-2 font-mono">
+                            <span>Oleh: ${escapeHTML(item.author)}</span>
+                            <span class="font-bold bg-neutral-200 px-2 py-0.5 border border-[#1c1c1a]">${escapeHTML(item.year)}</span>
+                        </div>
+                        <p class="text-sm font-normal text-neutral-800 leading-relaxed italic">"${escapeHTML(item.caption)}"</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            initGalleryAnimations();
+        }
+
+        function escapeHTML(str) {
+            return String(str).replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+
+        // 3. FUNGSI UNGGAN FOTO SANGAT CEPAT KE CLOUDINARY (UNSIGNED UPLOAD)
+        const photoForm = document.getElementById('photo-form');
+        photoForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            if (CLOUDINARY_CLOUD_NAME === "ISI_DENGAN_CLOUD_NAME_ANDA") {
+                alert("Harap isi CLOUDINARY_CLOUD_NAME dan CLOUDINARY_UPLOAD_PRESET di dalam script kodenya terlebih dahulu!");
+                return;
+            }
+
+            const submitBtn = document.getElementById('submit-btn');
+            const btnText = document.getElementById('btn-text');
+            const btnSpinner = document.getElementById('btn-spinner');
+
+            const author = document.getElementById('input-author').value;
+            const year = document.getElementById('input-year').value;
+            const caption = document.getElementById('input-caption').value;
+            const fileInput = document.getElementById('input-file');
+
+            if (!fileInput.files[0]) {
+                alert("Pilih file foto terlebih dahulu!");
+                return;
+            }
+
+            // Ubah UI ke Status Loading
+            submitBtn.disabled = true;
+            btnText.innerText = "Mengunggah Foto ke Cloudinary...";
+            btnSpinner.classList.remove('hidden');
+
+            try {
+                // Buat FormData untuk dikirim ke API Cloudinary
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+                formData.append('tags', CLOUDINARY_TAG);
+                
+                // Menyimpan Metadata (Nama, Tahun, Caption) ke dalam Context Cloudinary
+                const contextString = `author=${author}|year=${year}|caption=${caption}`;
+                formData.append('context', contextString);
+
+                // Kirim langsung ke Cloudinary API
+                const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error("Gagal mengunggah foto. Periksa Upload Preset Cloudinary Anda.");
+                }
+
+                const uploadedData = await response.json();
+                
+                // Simpan juga ke cache lokal agar langsung terlihat tanpa menunggu propagasi CDN
+                const newPhoto = {
+                    author: author,
+                    year: year,
+                    caption: caption,
+                    image: uploadedData.secure_url
+                };
+
+                const localCache = JSON.parse(localStorage.getItem('cloud_photos_cache') || '[]');
+                localCache.unshift(newPhoto);
+                localStorage.setItem('cloud_photos_cache', JSON.stringify(localCache));
+
+                alert("Berhasil! Foto Anda telah tersimpan secara publik di Cloudinary.");
+                
+                photoForm.reset();
+                fetchCloudinaryPhotos();
+                document.getElementById('galeri').scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                alert("Terjadi kesalahan saat unggah foto: " + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                btnText.innerText = "Unggah Foto Ke Cloud Online";
+                btnSpinner.classList.add('hidden');
+            }
+        });
+
+        // 4. GSAP ANIMATIONS
+        function initAnimations() {
+            const tlLoader = gsap.timeline();
+            tlLoader.to("#loader-bar", { width: "100%", duration: 0.8, ease: "power2.inOut" })
+                    .to("#loader-text", { opacity: 1, duration: 0.4 })
+                    .to("#preloader", { yPercent: -100, duration: 0.8, ease: "expo.inOut", delay: 0.2 })
+                    .from("#hero-badge", { opacity: 0, y: -20, duration: 0.5 }, "-=0.2")
+                    .from("#hero-title", { opacity: 0, y: 30, duration: 0.8, ease: "power3.out" }, "-=0.3")
+                    .from("#hero-desc", { opacity: 0, y: 20, duration: 0.6 }, "-=0.5")
+                    .from("#hero-cta", { opacity: 0, y: 20, duration: 0.6 }, "-=0.4")
+                    .from("#hero-img-container", { opacity: 0, scale: 0.95, duration: 0.8 }, "-=0.6");
+
+            gsap.to("#hero-img", {
+                yPercent: 15,
+                ease: "none",
+                scrollTrigger: {
+                    trigger: "#hero-img-container",
+                    start: "top center",
+                    end: "bottom top",
+                    scrub: true
+                }
+            });
+
+            gsap.utils.toArray('.section-title').forEach(title => {
+                gsap.from(title, {
+                    opacity: 0,
+                    x: -30,
+                    duration: 0.8,
+                    scrollTrigger: {
+                        trigger: title,
+                        start: "top 85%"
+                    }
+                });
+            });
+
+            gsap.from(".timeline-item", {
+                opacity: 0,
+                x: -40,
+                duration: 0.8,
+                stagger: 0.25,
+                ease: "power2.out",
+                scrollTrigger: {
+                    trigger: "#timeline",
+                    start: "top 70%"
+                }
+            });
+
+            gsap.to(".timeline-line-progress", {
+                scaleY: 1,
+                ease: "none",
+                scrollTrigger: {
+                    trigger: "#timeline",
+                    start: "top 60%",
+                    end: "bottom 80%",
+                    scrub: true
+                }
+            });
+        }
+
+        function initGalleryAnimations() {
+            gsap.from(".gallery-card", {
+                opacity: 0,
+                y: 30,
+                duration: 0.6,
+                stagger: 0.1,
+                ease: "power2.out"
+            });
+        }
+
+        document.getElementById('refresh-btn').addEventListener('click', fetchCloudinaryPhotos);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initAnimations();
+            fetchCloudinaryPhotos();
+        });
+    </script>
+</body>
+</html>
